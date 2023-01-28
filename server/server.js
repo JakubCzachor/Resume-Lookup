@@ -13,7 +13,7 @@ const ejs = require('ejs');
 const router = express.Router();
 const fs = require('fs')
 const fileUpload = require("express-fileupload");
-const url = "mongodb+srv://<username>:<password>@cluster.lmdk2wn.mongodb.net/<database name>"
+const url = "mongodb+srv://<username>:<password>1@cluster.lmdk2wn.mongodb.net/resumes";
 app.use(express.static(path.join(__dirname, "./public/")));
 app.use(fileUpload());
 app.use(express.json());
@@ -28,7 +28,7 @@ global.__basedir = __dirname;
 const storage = multer.diskStorage({
     destination: "/public/",
     filename: function (req, file, cb) {
-        cb(null, "IMAGE-" + Date.now() + path.extname(file.originalname));
+        cb(null,  Date.now() + path.extname(file.originalname));
     }
 });
 
@@ -45,7 +45,7 @@ const DataSchema = new mongoose.Schema({
 
 // Create a model for the collection
 const Data = mongoose.model('Data', DataSchema);
-const databaseName = 'esketite';
+const databaseName = 'resumes';
 const client = new MongoClient(url);
 
 async function dbConnect() {
@@ -63,7 +63,7 @@ app.get('/search', async (req, res) => {
         MongoClient.connect(url, { useNewUrlParser: true }, (err, db) => {
             
             if (err) throw err;
-            const dbo = db.db('esketite');
+            const dbo = db.db('resumes');
             dbo.collection('datas').find({}).project({ name: 1, email: 1 }).toArray(function (err, result) {
                 if (err) throw err;
                 console.log(result);
@@ -76,7 +76,7 @@ app.get('/search', async (req, res) => {
     else { 
 
     client.connect(err => {
-        const collection = client.db("esketite").collection("datas");
+        const collection = client.db("resumes").collection("datas");
         // perform actions on the collection object
         var query = { keywords: `${req.query.parameterName}` };
         console.log(query);
@@ -96,7 +96,7 @@ app.get('/search', async (req, res) => {
 
      
 function uploadHelper(pathHelper, tempEmail) {
-    mongoose.connect("mongodb+srv://<username>:<password>@cluster.lmdk2wn.mongodb.net/<database name>", {
+    mongoose.connect("mongodb+srv://<username>:<password>1@cluster.lmdk2wn.mongodb.net/resumes", {
         useNewUrlParser: true,
         useUnifiedTopology: true
     });
@@ -145,7 +145,7 @@ app.post("/upload", (req, res) => {
         return res.status(400).send("No files were uploaded.");
     }
 
-    mongoose.connect("mongodb+srv://<username>:<password>@cluster.lmdk2wn.mongodb.net/<database name>", {
+    mongoose.connect("mongodb+srv://<username>:<password>1@cluster.lmdk2wn.mongodb.net/resumes", {
         useNewUrlParser: true,
         useUnifiedTopology: true
     });
@@ -176,7 +176,7 @@ app.get("/", (req, res) => {
     res.render("views/index.ejs");
 });
 
-mongoose.connect("mongodb+srv://<username>:<password>@cluster.lmdk2wn.mongodb.net/<database name>", {
+mongoose.connect("mongodb+srv://<username>:<password>1@cluster.lmdk2wn.mongodb.net/resumes", {
     useUnifiedTopology: true,
     useNewUrlParser: true,
 }).then(() => { console.log("DB is connected") })
