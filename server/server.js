@@ -1,4 +1,3 @@
-
 const express = require("express");
 const path = require("path");
 const multer = require("multer");
@@ -6,14 +5,17 @@ const mongoose = require("mongoose");
 const app = express();
 const PORT = 5000;
 const cors = require("cors");
-const { MongoClient } = require('mongodb')
-const Scama = require('./model')
+const { MongoClient } = require('mongodb');
+const Scama = require('./model');
+const pdf = require('pdf-parse');
 const ejs = require('ejs');
-
+const pdf = require('pdf-parse');
 const router = express.Router();
 const fs = require('fs')
 const fileUpload = require("express-fileupload");
-const url = "mongodb+srv://<username>:<password>1@cluster.lmdk2wn.mongodb.net/resumes";
+const url = "mongodb+srv://<username>:<password>@cluster.lmdk2wn.mongodb.net/resumes";
+
+
 app.use(express.static(path.join(__dirname, "./public/")));
 app.use(fileUpload());
 app.use(express.json());
@@ -21,8 +23,10 @@ app.use(express.urlencoded({ extended: true }));
 app.set("views", path.join(__dirname), "views");
 app.set('view engine', 'ejs');
 
+
 require("dotenv").config({ path: "./config.env" });
 global.__basedir = __dirname;
+
 
 
 const storage = multer.diskStorage({
@@ -83,7 +87,7 @@ app.get('/search', async (req, res) => {
 
         collection.aggregate([
             { $match: query },
-            { $project: { name: 1 } }
+            { $project: { name: 1, email: 1 } }
         ]).toArray(function (err, result) {
             if (err) throw err;
             console.log(result);
@@ -96,14 +100,14 @@ app.get('/search', async (req, res) => {
 
      
 function uploadHelper(pathHelper, tempEmail) {
-    mongoose.connect("mongodb+srv://<username>:<password>1@cluster.lmdk2wn.mongodb.net/resumes", {
+    mongoose.connect("mongodb+srv://<username>:<password>@cluster.lmdk2wn.mongodb.net/resumes", {
         useNewUrlParser: true,
         useUnifiedTopology: true
     });
     var name;
     var tags;
    
-
+    
     string_to_array = function (str) {
         temp = str.trim().split(" ");
         unique = temp.filter((item, i, ar) => ar.indexOf(item) == i);
@@ -141,11 +145,13 @@ function uploadHelper(pathHelper, tempEmail) {
 }
 
 app.post("/upload", (req, res) => {
+    
+   
     if (!req.files) {
         return res.status(400).send("No files were uploaded.");
     }
 
-    mongoose.connect("mongodb+srv://<username>:<password>1@cluster.lmdk2wn.mongodb.net/resumes", {
+    mongoose.connect("mongodb+srv://<username>:<password>@cluster.lmdk2wn.mongodb.net/resumes", {
         useNewUrlParser: true,
         useUnifiedTopology: true
     });
@@ -154,18 +160,32 @@ app.post("/upload", (req, res) => {
     console.log(email);
     const path = __dirname + "/uploads/" + file.name; // changed to / instead of \\
     tempPath = "./uploads/" + file.name;
+    //console.log(file.extname())
 
     file.mv(path, (err) => {
         if (err) {
             console.log(path);
             return res.status(500).send(err);
         }
+        if (file.name.split(".").includes("PDF") || file.name.split(".").includes("pdf")) {
+            var tempVar = file.name.split(".", 1);
+            let dataBuffer = fs.readFileSync(tempPath);
+            pdf(dataBuffer).then(function (data) {
+                console.log(data.text);
+                fs.writeFile("./uploads/"+`${tempVar}`+".txt", data.text, function (err) {
+                    if (err) throw err;
+                    console.log("succk");
+                });
+            });
+
+            tempPath = "./uploads/" + `${tempVar}` + ".txt";
+        }
+        //fs.watch(tempPath, (eventType, file.name)) =>
         console.log(path);  // added this line to check the path
         uploadHelper(tempPath, email);  // remove one of the call to tempToop
     });
     res.redirect("/");
 });
-
 
 app.use(cors());
 app.use(cors({ origin: 'http://localhost:3000' }));
@@ -176,7 +196,7 @@ app.get("/", (req, res) => {
     res.render("views/index.ejs");
 });
 
-mongoose.connect("mongodb+srv://<username>:<password>1@cluster.lmdk2wn.mongodb.net/resumes", {
+mongoose.connect("mongodb+srv://<username>:<password>@cluster.lmdk2wn.mongodb.net/resumes", {
     useUnifiedTopology: true,
     useNewUrlParser: true,
 }).then(() => { console.log("DB is connected") })
